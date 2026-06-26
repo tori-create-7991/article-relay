@@ -7,13 +7,20 @@ export type ArticleFrontmatter = {
   topics?: string[];
   category?: string;
   private?: boolean;
-  cross_post?: { qiita?: boolean; zenn?: boolean; devto?: boolean };
+  cross_post?: {
+    qiita?: boolean;
+    zenn?: boolean;
+    note?: boolean;
+    devto?: boolean;
+  };
   qiita_url?: string | null;
   qiita_id?: string | null;
   zenn_url?: string | null;
   zenn_slug?: string | null;
   zenn_emoji?: string;
   zenn_type?: "tech" | "idea";
+  note_url?: string | null;
+  note_id?: string | null;
   [key: string]: unknown;
 };
 

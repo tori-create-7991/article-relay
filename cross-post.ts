@@ -26,6 +26,7 @@ const { frontmatter } = parseMarkdown(absPath);
 const targets = [
   { key: "qiita", enabled: frontmatter.cross_post?.qiita, script: "post-qiita.ts" },
   { key: "zenn", enabled: frontmatter.cross_post?.zenn, script: "post-zenn.ts" },
+  { key: "note", enabled: frontmatter.cross_post?.note, script: "post-note.ts" },
 ];
 
 const enabled = targets.filter((t) => force || t.enabled);

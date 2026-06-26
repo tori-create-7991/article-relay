@@ -8,6 +8,7 @@
   "scripts": {
     "qiita": "tsx post-qiita.ts",
     "zenn": "tsx post-zenn.ts",
+    "note": "tsx post-note.ts",
     "cross": "tsx cross-post.ts"
   },
   "devDependencies": {
