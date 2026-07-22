@@ -1,0 +1,46 @@
+name: Cross-post on dispatch
+
+on:
+  repository_dispatch:
+    types: [cross-post]
+  workflow_dispatch:
+    inputs:
+      file_content_base64:
+        description: "記事MD本文（base64）。手動テスト用。"
+        required: true
+      file_path:
+        description: "元のファイルパス（ログ表示用）"
+        required: false
+        default: "manual-test.md"
+
+jobs:
+  cross-post:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Decode article content
+        run: |
+          mkdir -p /tmp/cross-post
+          CONTENT="${{ github.event.client_payload.content || github.event.inputs.file_content_base64 }}"
+          echo "$CONTENT" | base64 -d > /tmp/cross-post/article.md
+          echo "元ファイル: ${{ github.event.client_payload.file_path || github.event.inputs.file_path }}"
+
+      - name: Cross-post
+        env:
+          QIITA_TOKEN: ${{ secrets.QIITA_TOKEN }}
+          ZENN_REPO_PATH: /tmp/cross-post/zenn-content
+          ZENN_REPO_URL: ${{ secrets.ZENN_REPO_URL }}
+          ZENN_BRANCH: ${{ vars.ZENN_BRANCH || 'main' }}
+          ZENN_AUTHOR_NAME: ${{ vars.ZENN_AUTHOR_NAME }}
+          ZENN_AUTHOR_EMAIL: ${{ vars.ZENN_AUTHOR_EMAIL }}
+        run: npm run cross -- /tmp/cross-post/article.md

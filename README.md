@@ -1,6 +1,6 @@
 # article-relay
 
-ブログ記事の Markdown を **Qiita / Zenn / note** にクロスポストする CLI。`x-times-relay` の長文版。
+ブログ記事の Markdown を **Qiita / Zenn / note** にクロスポストする CLI。`text-sns-relay` の長文版。
 
 - 自前ブログがマスタ
 - 記事 frontmatter の `cross_post` フラグで投稿先を制御
@@ -36,6 +36,11 @@ ZENN_BRANCH=main
 ```
 
 git push の commit author を変えたいなら `ZENN_AUTHOR_NAME` / `ZENN_AUTHOR_EMAIL` を設定。
+
+**CI環境（GitHub Actions等）で `ZENN_REPO_PATH` がまだ存在しない場合**、
+`ZENN_REPO_URL` を設定すると自動で `git clone` される（`lib/zenn-git.ts`
+の `ensureRepoCloned`）。ローカル開発では既存クローンをそのまま使えるので
+`ZENN_REPO_URL` は不要。
 
 ### note
 
@@ -101,6 +106,28 @@ npm run cross -- path/to/article.md -- --dry-run
 # cross_post フラグを無視して強制投稿
 npm run cross -- path/to/article.md -- --force
 ```
+
+## tori-dev-blog との自動連携（GitHub Actions cross-repo trigger）
+
+[tori-dev-blog](https://github.com/tori-create-7991/tori-dev-blog) に
+`cross_post` フラグ付き記事が push されると、blog 側の
+`.github/workflows/detect-cross-post.yml` が変更ファイルを検知し、この
+リポジトリへ `repository_dispatch`（event_type: `cross-post`）を送信する。
+`.github/workflows/cross-post-dispatch.yml` が受け取り、記事内容を
+base64 デコードして一時ファイルに書き出し `npm run cross` を実行する
+（tori-dev-blog `docs/design/cross-repo-loose-coupling.md` / ADR 0002 参照）。
+
+コードレベルの依存はなく、GitHub Actions のイベント経由でのみ疎通する
+（疎結合維持）。必要な GitHub Secrets（本リポジトリ側）:
+
+| Secret / Variable | 用途 |
+|---|---|
+| `QIITA_TOKEN` | Qiita投稿 |
+| `ZENN_REPO_URL` | Zenn連携リポのclone元（CI環境用） |
+| `ZENN_BRANCH` (variable) | 既定 `main` |
+| `ZENN_AUTHOR_NAME` / `ZENN_AUTHOR_EMAIL` (variable) | commit author |
+
+手動テストは `workflow_dispatch` からも可能（`file_content_base64` 入力）。
 
 ## 仕様メモ
 

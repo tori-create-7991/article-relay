@@ -58,15 +58,32 @@ function detectZennUser(repoPath: string): string {
   return process.env.ZENN_USER ?? "";
 }
 
+/**
+ * ZENN_REPO_PATH が存在しない場合、ZENN_REPO_URL からclone する。
+ * CI環境（GitHub Actions等）では毎回まっさらな作業ディレクトリのため、
+ * ローカル開発機の「既にクローン済み」前提だけでは動かない。
+ */
+function ensureRepoCloned(repo: string, branch: string): void {
+  if (existsSync(repo)) return;
+  const url = process.env.ZENN_REPO_URL;
+  if (!url) {
+    throw new Error(
+      `ZENN_REPO_PATH does not exist: ${repo}（CI環境なら ZENN_REPO_URL を設定してclone対応にしてください）`
+    );
+  }
+  mkdirSync(dirname(repo), { recursive: true });
+  execSync(`git clone --branch ${branch} --depth 1 ${url} ${repo}`, {
+    encoding: "utf8",
+  });
+}
+
 /** Zenn 連携リポに記事を書き、コミット＆push する */
 export async function publishArticle(
   input: ZennPostInput
 ): Promise<ZennPostResult> {
   const repo = requireEnv("ZENN_REPO_PATH");
   const branch = process.env.ZENN_BRANCH ?? "main";
-  if (!existsSync(repo)) {
-    throw new Error(`ZENN_REPO_PATH does not exist: ${repo}`);
-  }
+  ensureRepoCloned(repo, branch);
 
   // pull latest
   sh(repo, `git checkout ${branch}`);
